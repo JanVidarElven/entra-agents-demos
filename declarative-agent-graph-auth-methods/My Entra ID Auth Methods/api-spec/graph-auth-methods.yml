@@ -1,0 +1,44 @@
+openapi: 3.0.2
+info:
+  title: Microsoft Graph API - Authentication Methods
+  description: Microsoft Graph API for querying authentication methods.
+  version: '1.0'
+  contact:
+    name: Evidi
+    url: https://www.evidi.com
+paths:
+  /me/authentication/methods:
+    get:
+      responses:
+        '200':
+          description: Successful response with user's authentication methods.
+          content:
+            application/json:
+              schema:
+                type: object
+      summary: Get User Authentication Methods
+      operationId: GetUserAuthenticationMethods
+      parameters:
+        - name: $select
+          in: query
+          required: false
+          schema:
+            type: string
+security:
+  - oauth2-auth: []
+tags: []
+servers:
+  - url: https://graph.microsoft.com/v1.0
+components:
+  securitySchemes:
+    oauth2-auth:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: >-
+            https://login.microsoftonline.com/c7d38c7e-c163-46a2-a0d5-b33771cf10ba/oauth2/v2.0/authorize
+          tokenUrl: >-
+            https://login.microsoftonline.com/c7d38c7e-c163-46a2-a0d5-b33771cf10ba/oauth2/v2.0/token
+          scopes:
+            User.Read: Read User's Profiles
+            UserAuthenticationMethod.Read: Read User's Authentication Methods

@@ -1,0 +1,26 @@
+{
+    "$schema": "https://developer.microsoft.com/json-schemas/copilot/declarative-agent/v1.5/schema.json",
+    "version": "v1.5",
+    "name": "My Entra ID Auth Methods ${{APP_NAME_SUFFIX}}",
+    "description": "Declarative agent created with Microsoft 365 Agents Toolkit",
+    "instructions": "$[file('instruction.txt')]",
+    "conversation_starters": [
+        {
+            "title": "Getting My Authentication Methods",
+            "text": "What are my authentication methods?"
+        },
+        {
+            "title": "Getting Passwordless Methods",
+            "text": "What are my passwordless authentication methods?"
+        }
+    ],
+    "capabilities": [
+        {
+            "name": "WebSearch",
+            "sites": 
+            [
+                {"url": "https://learn.microsoft.com/entra/identity/"}
+            ]
+        }
+    ]
+}
