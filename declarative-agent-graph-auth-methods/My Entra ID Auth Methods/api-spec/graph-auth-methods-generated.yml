@@ -15,7 +15,9 @@ paths:
       tags:
         - Authentication
       security:
-        - bearerAuth: []
+        - OAuth2Auth:
+            - User.Read
+            - UserAuthenticationMethod.Read
       responses:
         '200':
           description: A collection of authenticationMethod objects
@@ -27,7 +29,6 @@ paths:
           description: Unauthorized
         '403':
           description: Forbidden
-      parameters: []
 
   /users/{userId}/authentication/methods:
     get:
@@ -36,7 +37,9 @@ paths:
       tags:
         - Authentication
       security:
-        - bearerAuth: []
+        - OAuth2Auth:
+            - User.Read.All
+            - UserAuthenticationMethod.Read.All
       parameters:
         - name: userId
           in: path
@@ -58,10 +61,17 @@ paths:
 
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    OAuth2Auth:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://login.microsoftonline.com/c7d38c7e-c163-46a2-a0d5-b33771cf10ba/oauth2/v2.0/authorize
+          tokenUrl: https://login.microsoftonline.com/c7d38c7e-c163-46a2-a0d5-b33771cf10ba/oauth2/v2.0/token
+          scopes:
+            User.Read: Read basic user profile
+            User.Read.All: Read all users' full profiles
+            UserAuthenticationMethod.Read: Read user's authentication methods
+            UserAuthenticationMethod.Read.All: Read all users' authentication methods
 
   schemas:
     AuthenticationMethodCollection:
