@@ -1,0 +1,117 @@
+openapi: 3.0.4
+info:
+  title: Microsoft Graph - List Authentication Methods - Subset
+  description: Retrieve a list of authentication methods registered to a user.
+  version: 1.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  /me/authentication/methods:
+    get:
+      tags:
+        - Authentication
+      summary: List authentication methods for the signed-in user
+      operationId: listOwnAuthenticationMethods
+      responses:
+        '200':
+          description: A collection of authenticationMethod objects
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        displayName:
+                          type: string
+                        createdDateTime:
+                          type: string
+                          format: date-time
+                        '@odata.type':
+                          type: string
+                        aaGuid:
+                          type: string
+                        model:
+                          type: string
+                        attestationCertificates:
+                          type: array
+                          items:
+                            type: string
+                        attestationLevel:
+                          type: string
+                        keyStrength:
+                          type: string
+      security:
+        - OAuth2Auth:
+            - User.Read
+            - UserAuthenticationMethod.Read
+  '/users/{userId}/authentication/methods':
+    get:
+      tags:
+        - Authentication
+      summary: List authentication methods for a specific user
+      operationId: listUserAuthenticationMethods
+      parameters:
+        - name: userId
+          in: path
+          description: The ID or userPrincipalName of the user
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A collection of authenticationMethod objects
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        displayName:
+                          type: string
+                        createdDateTime:
+                          type: string
+                          format: date-time
+                        '@odata.type':
+                          type: string
+                        aaGuid:
+                          type: string
+                        model:
+                          type: string
+                        attestationCertificates:
+                          type: array
+                          items:
+                            type: string
+                        attestationLevel:
+                          type: string
+                        keyStrength:
+                          type: string
+      security:
+        - OAuth2Auth:
+            - User.Read.All
+            - UserAuthenticationMethod.Read.All
+components:
+  securitySchemes:
+    OAuth2Auth:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://login.microsoftonline.com/c7d38c7e-c163-46a2-a0d5-b33771cf10ba/oauth2/v2.0/authorize
+          tokenUrl: https://login.microsoftonline.com/c7d38c7e-c163-46a2-a0d5-b33771cf10ba/oauth2/v2.0/token
+          scopes:
+            User.Read: Read basic user profile
+            User.Read.All: Read all users' full profiles
+            UserAuthenticationMethod.Read: Read user's authentication methods
+            UserAuthenticationMethod.Read.All: Read all users' authentication methods
+      x-ai-auth-reference-id: '{OAuth2Auth_REGISTRATION_ID}'

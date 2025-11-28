@@ -12,15 +12,28 @@
         {
             "title": "Getting Passwordless Methods",
             "text": "What are my passwordless authentication methods?"
+        },
+        {
+            "text": "List authentication methods for the signed-in user"
+        },
+        {
+            "text": "List authentication methods for a specific user"
         }
     ],
     "capabilities": [
         {
             "name": "WebSearch",
-            "sites": 
-            [
-                {"url": "https://learn.microsoft.com/entra/identity/"}
+            "sites": [
+                {
+                    "url": "https://learn.microsoft.com/entra/identity/"
+                }
             ]
+        }
+    ],
+    "actions": [
+        {
+            "id": "action_1",
+            "file": "ai-plugin.json"
         }
     ]
 }

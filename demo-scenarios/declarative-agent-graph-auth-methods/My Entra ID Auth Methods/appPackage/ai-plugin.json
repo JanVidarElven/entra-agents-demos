@@ -1,0 +1,61 @@
+{
+    "$schema": "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.1/schema.json",
+    "schema_version": "v2.1",
+    "name_for_human": "Microsoft Graph - List Authentication Methods",
+    "description_for_human": "Retrieve a list of authentication methods registered to a user.",
+    "description_for_model": "Retrieve a list of authentication methods registered to a user.",
+    "contact_email": "publisher-email@example.com",
+    "namespace": "myentraidauthmethods",
+    "capabilities": {
+        "conversation_starters": [
+            {
+                "text": "List authentication methods for the signed-in user"
+            },
+            {
+                "text": "List authentication methods for a specific user"
+            }
+        ]
+    },
+    "functions": [
+        {
+            "name": "listOwnAuthenticationMethods",
+            "description": "List authentication methods for the signed-in user",
+            "capabilities": {
+                "response_semantics": {
+                    "data_path": "$",
+                    "static_template": {
+                        "file": "./adaptiveCards/listOwnAuthenticationMethods.json"
+                    }
+                }
+            }
+        },
+        {
+            "name": "listUserAuthenticationMethods",
+            "description": "List authentication methods for a specific user",
+            "capabilities": {
+                "response_semantics": {
+                    "data_path": "$",
+                    "static_template": {
+                        "file": "./adaptiveCards/listUserAuthenticationMethods.json"
+                    }
+                }
+            }
+        }
+    ],
+    "runtimes": [
+        {
+            "type": "OpenApi",
+            "auth": {
+                "type": "OAuthPluginVault",
+                "reference_id": "${{OAUTH2AUTH_REGISTRATION_ID}}"
+            },
+            "spec": {
+                "url": "apiSpecificationFile/openapi.yaml"
+            },
+            "run_for_functions": [
+                "listOwnAuthenticationMethods",
+                "listUserAuthenticationMethods"
+            ]
+        }
+    ]
+}

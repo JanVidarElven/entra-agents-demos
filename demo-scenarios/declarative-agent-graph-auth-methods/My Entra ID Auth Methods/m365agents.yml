@@ -16,6 +16,14 @@ provision:
     # the specified environment variable(s).
     writeToEnvironmentFile:
       teamsAppId: TEAMS_APP_ID
+  - uses: oauth/register
+    with:
+      name: OAuth2Auth
+      appId: ${{TEAMS_APP_ID}}
+      apiSpecPath: ./appPackage/apiSpecificationFile/openapi.yaml
+      flow: authorizationCode
+    writeToEnvironmentFile:
+      configurationId: OAUTH2AUTH_REGISTRATION_ID
 
   # Build app package with latest env value
   - uses: teamsApp/zipAppPackage

@@ -1,0 +1,112 @@
+openapi: 3.0.0
+info:
+  title: Microsoft Graph - List Authentication Methods
+  version: 1.0.0
+  description: Retrieve a list of authentication methods registered to a user.
+
+servers:
+  - url: https://graph.microsoft.com/v1.0
+
+paths:
+  /me/authentication/methods:
+    get:
+      summary: List authentication methods for the signed-in user
+      operationId: listOwnAuthenticationMethods
+      tags:
+        - Authentication
+      security:
+        - OAuth2Auth:
+            - User.Read
+            - UserAuthenticationMethod.Read
+      responses:
+        '200':
+          description: A collection of authenticationMethod objects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticationMethodCollection'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /users/{userId}/authentication/methods:
+    get:
+      summary: List authentication methods for a specific user
+      operationId: listUserAuthenticationMethods
+      tags:
+        - Authentication
+      security:
+        - OAuth2Auth:
+            - User.Read.All
+            - UserAuthenticationMethod.Read.All
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID or userPrincipalName of the user
+      responses:
+        '200':
+          description: A collection of authenticationMethod objects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticationMethodCollection'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+components:
+  securitySchemes:
+    OAuth2Auth:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://login.microsoftonline.com/c7d38c7e-c163-46a2-a0d5-b33771cf10ba/oauth2/v2.0/authorize
+          tokenUrl: https://login.microsoftonline.com/c7d38c7e-c163-46a2-a0d5-b33771cf10ba/oauth2/v2.0/token
+          scopes:
+            User.Read: Read basic user profile
+            User.Read.All: Read all users' full profiles
+            UserAuthenticationMethod.Read: Read user's authentication methods
+            UserAuthenticationMethod.Read.All: Read all users' authentication methods
+
+  schemas:
+    AuthenticationMethodCollection:
+      type: object
+      properties:
+        value:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthenticationMethod'
+
+    AuthenticationMethod:
+      type: object
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string
+        createdDateTime:
+          type: string
+          format: date-time
+        "@odata.type":
+          type: string
+        aaGuid:
+          type: string
+        model:
+          type: string
+        attestationCertificates:
+          type: array
+          items:
+            type: string
+        attestationLevel:
+          type: string
+        keyStrength:
+          type: string
+
+tags:
+  - name: Authentication
+    description: Operations related to user authentication methods
