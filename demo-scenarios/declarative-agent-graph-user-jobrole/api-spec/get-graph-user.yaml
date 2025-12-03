@@ -1,0 +1,65 @@
+openapi: 3.0.1
+info:
+  title: Microsoft Graph User API
+  version: 1.0.0
+  description: Retrieve a user and selected properties from Microsoft Graph using OAuth2 authentication.
+
+servers:
+  - url: https://graph.microsoft.com/v1.0
+
+paths:
+  /users/{username}:
+    get:
+      summary: Get user by username
+      description: Retrieve a user and selected properties from Microsoft Graph.
+      parameters:
+        - name: username
+          in: path
+          required: true
+          description: UPN or user ID of the user to retrieve.
+          schema:
+            type: string
+        - name: $select
+          in: query
+          required: false
+          description: Comma-separated list of properties to return (e.g., displayName, mail, jobTitle).
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response with user object
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  displayName:
+                    type: string
+                  mail:
+                    type: string
+                  jobTitle:
+                    type: string
+        '401':
+          description: Unauthorized - invalid or missing OAuth2 token
+        '404':
+          description: User not found
+
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: OAuth2 authentication with Microsoft identity platform
+      flows:
+        authorizationCode:
+          authorizationUrl: https://login.microsoftonline.com/104742fb-6225-439f-9540-60da5f0317dc/oauth2/v2.0/authorize
+          tokenUrl: https://login.microsoftonline.com/104742fb-6225-439f-9540-60da5f0317dc/oauth2/v2.0/token
+          scopes:
+            User.Read: Read user profile
+            User.ReadBasic.All: Read basic profiles of all users
+
+security:
+  - oauth2:
+      - User.Read
+      - User.ReadBasic.All
