@@ -1,0 +1,39 @@
+{
+    "$schema": "https://developer.microsoft.com/json-schemas/copilot/plugin/v2.3/schema.json",
+    "schema_version": "v2.3",
+    "name_for_human": "Microsoft Graph User API",
+    "description_for_human": "Retrieve a user and selected properties from Microsoft Graph using OAuth2 authentication.",
+    "description_for_model": "Retrieve a user and selected properties from Microsoft Graph using OAuth2 authentication.",
+    "contact_email": "publisher-email@example.com",
+    "namespace": "espc25jobroleassistant",
+    "capabilities": {},
+    "functions": [
+        {
+            "name": "users_item_get",
+            "description": "Retrieve a user and selected properties from Microsoft Graph.",
+            "capabilities": {
+                "response_semantics": {
+                    "data_path": "$",
+                    "static_template": {
+                        "file": "./adaptiveCards/users_item_get.json"
+                    }
+                }
+            }
+        }
+    ],
+    "runtimes": [
+        {
+            "type": "OpenApi",
+            "auth": {
+                "type": "OAuthPluginVault",
+                "reference_id": "${{OAUTH2_REGISTRATION_ID}}"
+            },
+            "spec": {
+                "url": "apiSpecificationFile/openapi.yaml"
+            },
+            "run_for_functions": [
+                "users_item_get"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,18 @@
+{
+    "$schema": "https://developer.microsoft.com/json-schemas/copilot/declarative-agent/v1.5/schema.json",
+    "version": "v1.5",
+    "name": "ESPC25 - Job Role Assistant${{APP_NAME_SUFFIX}}",
+    "description": "Declarative agent created with Microsoft 365 Agents Toolkit",
+    "instructions": "$[file('instruction.txt')]",
+    "actions": [
+        {
+            "id": "action_1",
+            "file": "ai-plugin.json"
+        }
+    ],
+    "conversation_starters": [
+        {
+            "text": "Get user by username"
+        }
+    ]
+}

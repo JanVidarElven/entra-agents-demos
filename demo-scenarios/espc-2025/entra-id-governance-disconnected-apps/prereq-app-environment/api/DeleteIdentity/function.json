@@ -1,0 +1,35 @@
+{
+  "bindings": [
+    {
+      "authLevel": "anonymous",
+      "type": "HttpTrigger",
+      "direction": "in",
+      "name": "Request",
+      "methods": [
+        "delete"
+      ],
+      "route": "identities/{id}"      
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "Response"
+    },
+    {
+      "type": "cosmosDB",
+      "name": "CosmosInput",
+      "direction": "in",
+      "connectionStringSetting": "ProtectedAPI_CosmosDB",
+      "databaseName": "db-outbound-provisioning",
+      "collectionName": "identities"
+    },
+    {
+      "type": "cosmosDB",
+      "name": "CosmosOutput",
+      "direction": "out",
+      "connectionStringSetting": "ProtectedAPI_CosmosDB",
+      "databaseName": "db-outbound-provisioning",
+      "collectionName": "identities"
+    }    
+  ]
+}

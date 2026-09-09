@@ -1,0 +1,27 @@
+{
+  "bindings": [
+    {
+      "authLevel": "anonymous",
+      "type": "HttpTrigger",
+      "direction": "in",
+      "name": "Request",
+      "methods": [
+        "post"
+      ],
+      "route": "identities"      
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "Response"
+    },
+    {
+      "type": "cosmosDB",
+      "name": "CosmosOutput",
+      "direction": "out",
+      "connectionStringSetting": "ProtectedAPI_CosmosDB",
+      "databaseName": "db-outbound-provisioning",
+      "collectionName": "identities"
+    } 
+  ]
+}

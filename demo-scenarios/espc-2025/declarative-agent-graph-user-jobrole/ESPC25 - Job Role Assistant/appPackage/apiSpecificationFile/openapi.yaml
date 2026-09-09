@@ -1,0 +1,86 @@
+openapi: 3.0.4
+info:
+  title: Microsoft Graph User API - Subset
+  description: Retrieve a user and selected properties from Microsoft Graph using OAuth2 authentication.
+  version: 1.0.0
+servers:
+  - url: https://graph.microsoft.com/v1.0
+paths:
+  '/users/{username}':
+    get:
+      summary: Get user by username
+      description: Retrieve a user and selected properties from Microsoft Graph.
+      operationId: users_item_get
+      parameters:
+        - name: username
+          in: path
+          description: UPN or user ID of the user to retrieve.
+          required: true
+          schema:
+            type: string
+        - name: $select
+          in: query
+          description: Comma-separated list of properties to return.
+          explode: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response with user object
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  userPrincipalName:
+                    type: string
+                  displayName:
+                    type: string
+                  givenName:
+                    type: string
+                  surname:
+                    type: string
+                  employeeId:
+                    type: string
+                  employeeHireDate:
+                    type: string
+                    format: date-time
+                  companyName:
+                    type: string
+                  department:
+                    type: string
+                  jobTitle:
+                    type: string
+                  officeLocation:
+                    type: string
+                  employeeType:
+                    type: string
+                  extension_4d4570168b374a7b83672ba20a7d9d03_elvenPersona:
+                    type: string
+                  extension_4d4570168b374a7b83672ba20a7d9d03_elvenPersonaSubType:
+                    type: string
+                  employeeOrgData:
+                    type: object
+                    properties:
+                      costCenter:
+                        type: string
+                      division:
+                        type: string
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: OAuth2 authentication with Microsoft identity platform
+      flows:
+        authorizationCode:
+          authorizationUrl: https://login.microsoftonline.com/104742fb-6225-439f-9540-60da5f0317dc/oauth2/v2.0/authorize
+          tokenUrl: https://login.microsoftonline.com/104742fb-6225-439f-9540-60da5f0317dc/oauth2/v2.0/token
+          scopes:
+            User.Read: Read user profile
+            User.ReadBasic.All: Read basic profiles of all users
+security:
+  - oauth2:
+      - User.Read
+      - User.ReadBasic.All
