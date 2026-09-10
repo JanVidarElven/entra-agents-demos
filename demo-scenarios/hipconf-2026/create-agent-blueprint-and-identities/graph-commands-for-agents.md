@@ -82,7 +82,7 @@ And add this request body:
 In Graph Explorer, prepare this request method, uri, and headers:
 
 ```http
-PATCH /applications/<agent-blueprint-id>/ microsoft.graph.agentIdentityBlueprint
+PATCH /applications/<agent-blueprint-id>/microsoft.graph.agentIdentityBlueprint
 OData-Version: 4.0
 Content-Type: application/json
 ```
@@ -178,7 +178,7 @@ Authorization: Bearer <token-from-agent-blueprint>
 
 ```json
 {
-    "displayName": "My Agent Identity",
+    "displayName": "HIP Conf 2026 Agent Identity",
     "agentIdentityBlueprintId": "<my-agent-blueprint-id>",
     "sponsors@odata.bind": [
         "https://graph.microsoft.com/v1.0/users/<id>",
@@ -199,9 +199,9 @@ Content-type: application/json
 ```json
 {
   "accountEnabled": true,
-  "displayName": "HIP Conf 2026 Agent User 1",
-  "mailNickname": "hip-conf-2026.agent1",
-  "userPrincipalName": "ai-community.agent1@<your-upn-suffix>",
+  "displayName": "HIP Conf 2026 Agent User",
+  "mailNickname": "hip-conf-2026.agent",
+  "userPrincipalName": "hip-conf-2026.agent@<your-upn-suffix>",
   "identityParentId": "<agent-identity-id>"
 }
 ```

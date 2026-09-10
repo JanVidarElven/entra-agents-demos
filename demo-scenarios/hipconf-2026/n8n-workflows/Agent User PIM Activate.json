@@ -1,0 +1,258 @@
+{
+  "name": "Agent User PIM Activate",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "054dc0b6-3cef-455c-bb65-fd2ea49730b4",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "41751c0d-68d8-4d92-a42c-97c83ef0fb00",
+      "name": "Webhook",
+      "webhookId": "054dc0b6-3cef-455c-bb65-fd2ea49730b4"
+    },
+    {
+      "parameters": {},
+      "type": "@astaykov/n8n-nodes-entraagentid.entraAgentIdAuthManager",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "dfbd51fd-3ce9-4bd9-b522-7e838339f03e",
+      "name": "Entra Agent ID Authentication Manager",
+      "credentials": {
+        "entraAgentIDApi": {
+          "id": "FmYVcgdKdb0M0m8j",
+          "name": "Evidi AI Community - Agent ID with OBO"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.chatInput }}",
+        "options": {
+          "systemMessage": "# Identity & Purpose\n\nYou are an AI Agent with your own Microsoft Entra identity. You help users with tasks using Microsoft Graph API.\n\n- **Microsoft Graph** — you authenticate as yourself (delegated only). You act as an agent user.\n\nYou can only work with **delegated permissions**. You do not have access to application-role Graph resources unless explicitly granted via application permissions.\n\nDo not ask to proceed for any read (GET) operations!\n\n# Tools\n\nYou have 2 tools. Both are pre-authenticated — you do not need to acquire tokens.\n\n| Tool | Purpose | Auth |\n|------|---------|------|\n| Microsoft Learn | Look up endpoints, features, diagnose errors | None |\n| Microsoft Graph | Execute HTTP requests against Microsoft Graph | Pre-authenticated (delegated-only) |\n\nUse `Microsoft Learn` to look up endpoints, features, or diagnose errors. No token required.\n\n# Tool-Specific Guidance\n\n## Microsoft Learn\n- Search official Microsoft documentation for API endpoints, permissions, concepts, and troubleshooting.\n- No authentication required.\n- Use when you need to look up an endpoint, understand a feature, or diagnose an error.\n\n# Execution Rules\n\n- **Non-state-changing requests** (reads/queries, any HTTP method): execute freely.\n- **State-changing requests** (creates, updates, deletes): confirm with the user first\n- Be concise. Use tables for multi-item results.\n\n# Access Denied Self-Remediation (401/403)\n\nWhen any API call returns 401 or 403, do NOT give up. Follow the steps below.\n\n## Step 1: Identify the exact least privileged Directory Role\n\nUse the error response and/or `Microsoft Learn` tool. Write down:\n- The **Directory Role** (e.g., `Directory Readers`)\n\n## Step 2: Search Eligible Directory Roles\n\n`GET /roleManagement/directory/roleEligibilityScheduleInstances/microsoft.graph.filterByCurrentUser(on='principal')`\n\n## Step 3: Inspect each directory role\n\nFor each eligble role, call:\n`GET /roleManagement/directory/roleDefinitions/{roleDefinitionId}`\n\n**Match criteria — both must be true:**\n- `templateId` exactly matches the `roleDefinitionId` from step 2 \n\n**Stop iterating** when you find an exact match. \n\n## Step 4: If matched — confirm with user that `displayName` and `description` matches the least privilege role from step 1. Prompt the user for a justification text used for the activation of the role.\n\n## Step 5: Activate the role using:\n`POST /roleManagement/directory/roleAssignmentScheduleRequests`\n\nUse the following values for the request body:\n- **PrincipalId** -> The agent user id\n- **RoleDefinitionId** -> The Directory role from above\n- **Justification** -> From the user prompt\n- Use \"/\" and \"SelfActivate\" for DirectoryScopeId and Action\n- **ScheduleInfo** -> StartDateTime is now (time of request) and Expiration is of Type AfterDuration and Duration is 1 hour (PT1H)\n\n## Step 6: No match found\n\nTell the user to contact their Entra admin for the specific Directory Role.\n\n## Step 7: Do not retry\n\nDo not retry the original operation until the user confirms access is granted."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "c605f3fb-fe18-48c7-8118-1a109e8e7d44",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "gpt-5.4",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        288,
+        208
+      ],
+      "id": "df9fb103-e509-4cc8-b2a2-21f908f07786",
+      "name": "Azure OpenAI Chat Model",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "vyl9RykgbHTwlcOh",
+          "name": "Azure Open AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        432,
+        208
+      ],
+      "id": "7b153c23-c7ec-4ae1-bd46-94500f8236de",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://learn.microsoft.com/api/mcp",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.3,
+      "position": [
+        576,
+        208
+      ],
+      "id": "588d8bc3-ff3c-4088-83ea-36438ad0379f",
+      "name": "Microsoft Learn MCP"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        816,
+        0
+      ],
+      "id": "05021f97-e716-43e8-a21d-2145d040b146",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Microsoft Graph Direct HTTP Tool\n \nThis tool makes raw HTTP requests to Microsoft Graph. \n \n ## Rules\n 1. **Domain lock:** All requests MUST target `https://graph.microsoft.com/`. Never call any other domain.\n 2. **API version:** Path MUST start with `/v1.0/`. Use `/beta/` ONLY if the user explicitly requests it or the \nendpoint has no v1.0 equivalent.\n 3. **Research first:** Before calling, verify the endpoint, method, and request body using `Microsoft Learn` or \nyour existing knowledge. Do not guess payload schemas.\n 4. **Confirm before executing:** Always tell the user the HTTP method, endpoint, and a summary of the payload. Wait\n for explicit approval before sending.\n 5. **One operation at a time:** Do not batch multiple write operations. Execute, verify the result, then proceed.\n 6. **Minimal scope:** Request only the fields and changes necessary. Do not send extraneous properties in the \nrequest body.\n7. **Request Header**. If operation includes a JSON request body, always include Content-Type: application/json in the Request Header.\n \n ## Examples of acceptable use\n - List eligible role assignments for own principal only (`GET /v1.0/roleManagement/directory/roleEligibilityScheduleInstances/microsoft.graph.filterByCurrentUser(on='principal')`)\n - Listing Directory Role definitions (`GET /v1.0/roleManagement/directory/roleDefinitions/`)\n - Requesting to Activate an Eligible Directory Role (`POST \n/v1.0/roleManagement/directory/roleAssignmentScheduleRequests`)\n - Listing users (`GET /v1.0/users`) \n \n ## Examples of PROHIBITED use\n - Calling non-Graph APIs → not allowed ",
+        "method": "={{ \n  (['GET','POST','PATCH'].includes(\n    (($fromAI('method','HTTP method: GET/POST/PATCH','string','GET') || 'GET').trim().toUpperCase())\n  ))\n  ? (($fromAI('method','HTTP method: GET/POST/PATCH','string','GET') || 'GET').trim().toUpperCase())\n  : 'GET'\n}}",
+        "url": "={{ 'https://graph.microsoft.com' + $fromAI('path', 'Graph path starting with /v1.0 or /beta. May include query string. Example: /v1.0/users or /v1.0/me/messages or /v1.0/users?$select=id,displayName', 'string') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Name', ``, 'string') }}",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $fromAI('body', 'JSON payload for POST/PATCH. For GET, return {}', 'json', {}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        720,
+        208
+      ],
+      "id": "3040a13f-3d85-42cb-90eb-ad4ce1e33b65",
+      "name": "Microsoft Graph",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "XxznCwbFzNRXScSa",
+          "name": "Bearer Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Entra Agent ID Authentication Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entra Agent ID Authentication Manager": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Azure OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Microsoft Learn MCP": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Microsoft Graph": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "61f664a7-4478-4ff9-95a7-cec9b3a1e126",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "11f1df0796671e44efa4bfcb1f45956fa0c003370b0de01cb90f1c66d6941016"
+  },
+  "nodeGroups": [],
+  "id": "uUPGr7bQLx6TYuYy",
+  "tags": []
+}
