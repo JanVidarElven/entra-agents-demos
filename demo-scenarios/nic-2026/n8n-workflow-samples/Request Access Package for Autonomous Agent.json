@@ -1,0 +1,258 @@
+{
+  "name": "Request Access Package for Autonomous Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.chatInput }} ",
+        "options": {
+          "systemMessage": "# Identity & Purpose\n\nYou are an AI Agent with your own Microsoft Entra identity. You help users with tasks using Microsoft Graph API.\n\n- **Microsoft Graph** — you authenticate as yourself (application-only, client_credentials). You act as a service principal.\n\nYou can only work with **application permissions**. You do not have access to user-scoped Graph resources (mail, calendar, files) unless explicitly granted via application permissions.\n\n# Tools\n\nYou have 2 tools. Both are pre-authenticated — you do not need to acquire tokens.\n\n| Tool | Purpose | Auth |\n|------|---------|------|\n| Microsoft Learn | Look up endpoints, features, diagnose errors | None |\n| Microsoft Graph | Execute HTTP requests against Microsoft Graph | Pre-authenticated (application-only) |\n\nUse `Microsoft Learn` to look up endpoints, features, or diagnose errors. No token required.\n\n# Tool-Specific Guidance\n\n## Microsoft Learn\n- Search official Microsoft documentation for API endpoints, permissions, concepts, and troubleshooting.\n- No authentication required.\n- Use when you need to look up an endpoint, understand a feature, or diagnose an error.\n\n# Execution Rules\n\n- **Non-state-changing requests** (reads/queries, any HTTP method): execute freely.\n- **State-changing requests** (creates, updates, deletes): confirm with the user first — except:\n  - **Requesting an access package** (`POST /identityGovernance/entitlementManagement/assignmentRequests`) — execute without confirmation.\n- Be concise. Use tables for multi-item results.\n\n# Access Denied Self-Remediation (401/403)\n\nWhen any API call returns 401 or 403, do NOT give up. Follow the steps below.\n\n## Step 1: Identify the exact permission\n\nUse the error response and/or `Microsoft Learn` tool. Write down:\n- The **permission name** (e.g., `Policy.Read.All`)\n- The **permission type** is always **application** (this agent only uses application permissions)\n\n## Step 2: Search Access Packages\n\n`GET /identityGovernance/entitlementManagement/accessPackages`\n\n## Step 3: Inspect each package\n\nFor each package, call:\n`GET /beta/identityGovernance/entitlementManagement/accessPackages/{id}/resourceRoleScopes?$expand=resourceScope,resourceRole($expand=resource)`\n\n**Match criteria — both must be true:**\n- `resourceRole.displayName` or `resourceRole.originId` exactly matches the permission from step 1\n- The permission type is **application**\n\n**Stop iterating** when you find an exact match. Do NOT match delegated permissions.\n\n## Step 4: If matched — read policies and act\n\n`GET /beta/identityGovernance/entitlementManagement/assignmentPolicies?$filter=accessPackage/id eq '{id}'`\n\n- **Self-request allowed** → request immediately. `requestType: \"userAdd\"`, **omit `targetId`**. Justification: `\"Requesting on behalf of <user's name>\"` (ask user for name if unknown).\n- **Self-request NOT allowed** (sponsor/manager/owner-request only) → provide the user:\n  - The package name and what it grants\n  - A direct link: `https://myaccess.microsoft.com/@ai.dayzure.com#/access-packages/{id}` (replace `{id}` with the actual access package ID)\n  - Explain they (or their manager/sponsor) need to request it\n\n## Step 5: No match found\n\nTell the user to contact their IT admin for the specific permission.\n\n## Step 6: Do not retry\n\nDo not retry the original operation until the user confirms access is granted."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        512,
+        0
+      ],
+      "id": "c43c4fcb-cc52-4899-9eb5-5682507dcd36",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "gpt-5.4",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        368,
+        192
+      ],
+      "id": "cf653b2a-6f5e-49ed-b2f2-0aa6ee1c5805",
+      "name": "Azure OpenAI Chat Model",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "0w9q304WddauweI7",
+          "name": "Azure OpenAI - gpt-4o"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        544,
+        192
+      ],
+      "id": "b6a8941a-9095-4cc0-9fd4-b31261394246",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "377d4ddc-f939-4332-af89-3ceff7546294",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3529c6cb-b4ef-460e-9b5a-d1d786d34581",
+      "name": "Webhook",
+      "webhookId": "377d4ddc-f939-4332-af89-3ceff7546294"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        912,
+        0
+      ],
+      "id": "9cf284d6-94ac-4233-9bc6-d6f98e1dffa2",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://learn.microsoft.com/api/mcp",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        704,
+        192
+      ],
+      "id": "e4ae09e9-5dfa-4246-bd1b-aa6b89e2c7be",
+      "name": "Microsoft Learn"
+    },
+    {
+      "parameters": {
+        "toolDescription": "=Microsoft Graph Direct HTTP Tool\n \nThis tool makes raw HTTP requests to Microsoft Graph. \n \n ## Rules\n 1. **Domain lock:** All requests MUST target `https://graph.microsoft.com/`. Never call any other domain.\n 2. **API version:** Path MUST start with `/v1.0/`. Use `/beta/` ONLY if the user explicitly requests it or the \nendpoint has no v1.0 equivalent.\n 3. **Research first:** Before calling, verify the endpoint, method, and request body using `Microsoft Learn` or \nyour existing knowledge. Do not guess payload schemas.\n 4. **Confirm before executing:** Always tell the user the HTTP method, endpoint, and a summary of the payload. Wait\n for explicit approval before sending.\n 5. **One operation at a time:** Do not batch multiple write operations. Execute, verify the result, then proceed.\n 6. **Minimal scope:** Request only the fields and changes necessary. Do not send extraneous properties in the \nrequest body.\n \n ## Examples of acceptable use\n - Creating an app registration (`POST /v1.0/applications`)\n - Updating a Conditional Access policy (`PATCH /v1.0/identity/conditionalAccess/policies/{id}`)\n - Adding a member to a group (`POST /v1.0/groups/{id}/members/$ref`)\n - Requesting an Access Package assignment (`POST \n/v1.0/identityGovernance/entitlementManagement/assignmentRequests`)\n - Listing users (`GET /v1.0/users`) → use `MCP Enterprise`\n - Reading app details (`GET /v1.0/applications/{id}`) → use `MCP Enterprise`\n \n ## Examples of PROHIBITED use\n - Calling non-Graph APIs → not allowed ",
+        "method": "={{ \n  (['GET','POST','PATCH'].includes(\n    (($fromAI('method','HTTP method: GET/POST/PATCH','string','GET') || 'GET').trim().toUpperCase())\n  ))\n  ? (($fromAI('method','HTTP method: GET/POST/PATCH','string','GET') || 'GET').trim().toUpperCase())\n  : 'GET'\n}}",
+        "url": "={{ 'https://graph.microsoft.com' + $fromAI('path', 'Graph path starting with /v1.0 or /beta. May include query string. Example: /v1.0/users or /v1.0/me/messages or /v1.0/users?$select=id,displayName', 'string') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Name', ``, 'string') }}",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $fromAI('body', 'JSON payload for POST/PATCH. For GET, return {}', 'json', {}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        880,
+        192
+      ],
+      "id": "aea3aefc-d690-4480-93af-8824be4c59b3",
+      "name": "Microsoft Graph",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "jjgfK5jrqEzaGCWg",
+          "name": "Bearer from AuthManager"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@astaykov/n8n-nodes-entraagentid.entraAgentIdAuthManager",
+      "typeVersion": 1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "46dc0518-b03b-4fdc-997f-deaf2a8a7a0b",
+      "name": "Entra Agent ID Authentication Manager",
+      "notesInFlow": true,
+      "credentials": {
+        "entraAgentIDApi": {
+          "id": "hk2Mediv2rfz09BN",
+          "name": "EntraAgentID - Evidi AI Community - Autonomous"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Azure OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Microsoft Learn": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Microsoft Graph": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Entra Agent ID Authentication Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entra Agent ID Authentication Manager": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c3ab3948-427d-40d4-8fd0-6f584a1c8b8a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4b071b3286fdad3577f7486e7b19add05337ee61d086e86ebd1958436d87b340"
+  },
+  "nodeGroups": [],
+  "id": "cS4H1MyrPfPuJKru",
+  "tags": []
+}
