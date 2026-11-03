@@ -153,38 +153,95 @@ grant_type=client_credentials
 
 ### Get a Token using Client Secret
 
-Using PowerShell Invoke-RestMethod, Postman client etc, run the following request and form values:
+#### Get a Token using Client Secret (REST API)
+
+Send this form-encoded request directly to the Microsoft identity platform token endpoint:
 
 ```http
-POST https://login.microsoftonline.com/<my-tenant-id>/oauth2/v2.0/token
+POST https://login.microsoftonline.com/<your-tenant-id>/oauth2/v2.0/token
 Content-Type: application/x-www-form-urlencoded
 
-client_id=<agent-blueprint-id>
-scope=https://graph.microsoft.com/.default
-client_secret=<my-secret-credential>
-grant_type=client_credentials
+client_id=<agent-blueprint-app-id>&scope=https%3A%2F%2Fgraph.microsoft.com%2F.default&client_secret=<client-secret>&grant_type=client_credentials
+```
+
+Use the `access_token` from the response as the bearer token in the request below. Keep the client secret secure; do not include it in source control.
+
+#### Get a Token using Client Secret with PowerShell
+
+Use PowerShell Core. Set the client secret in the `AGENT_BLUEPRINT_CLIENT_SECRET` environment variable before running these commands:
+
+```powershell
+$TenantId = "<your-tenant-id>"
+$AgentBlueprintId = "<agent-blueprint-app-id>"
+$ClientSecret = $env:AGENT_BLUEPRINT_CLIENT_SECRET
+
+if ([string]::IsNullOrWhiteSpace($ClientSecret)) {
+  throw "Set the AGENT_BLUEPRINT_CLIENT_SECRET environment variable first."
+}
+
+$TokenResponse = Invoke-RestMethod `
+  -Method Post `
+  -Uri "https://login.microsoftonline.com/$TenantId/oauth2/v2.0/token" `
+  -ContentType "application/x-www-form-urlencoded" `
+  -Body @{
+    client_id     = $AgentBlueprintId
+    scope         = "https://graph.microsoft.com/.default"
+    client_secret = $ClientSecret
+    grant_type    = "client_credentials"
+  }
+
+$AccessToken = $TokenResponse.access_token
 ```
 
 ### Create the Agent Identity using the Token
 
-Using PowerShell Invoke-RestMethod, Postman client etc, run the following request and the request body as shown below:
+#### Create the Agent Identity using the Token (REST API)
+
+Send this request with the access token obtained above:
 
 ```http
-POST /serviceprincipals/Microsoft.Graph.AgentIdentity
+POST https://graph.microsoft.com/v1.0/servicePrincipals/Microsoft.Graph.AgentIdentity
+Authorization: Bearer <access-token>
 OData-Version: 4.0
 Content-Type: application/json
-Authorization: Bearer <token-from-agent-blueprint>
+
+{
+  "displayName": "CIS 2026 Agent Identity",
+  "agentIdentityBlueprintId": "<agent-blueprint-app-id>",
+  "sponsors@odata.bind": [
+    "https://graph.microsoft.com/v1.0/users/<user-object-id>",
+    "https://graph.microsoft.com/v1.0/groups/<group-id>"
+  ]
+}
 ```
 
-```json
-{
-    "displayName": "CIS 2026 Agent Identity",
-    "agentIdentityBlueprintId": "<my-agent-blueprint-id>",
-    "sponsors@odata.bind": [
-        "https://graph.microsoft.com/v1.0/users/<id>",
-        "https://graph.microsoft.com/v1.0/groups/<group-id>"
-    ]
+#### Create the Agent Identity using the Token with PowerShell
+
+Use the access token to create the agent identity:
+
+```powershell
+$AgentIdentityBody = @{
+  displayName              = "CIS 2026 Agent Identity"
+  agentIdentityBlueprintId = $AgentBlueprintId
+  "sponsors@odata.bind"   = @(
+    "https://graph.microsoft.com/v1.0/users/<user-object-id>"
+    "https://graph.microsoft.com/v1.0/groups/<group-id>"
+  )
 }
+
+$Headers = @{
+  Authorization   = "Bearer $AccessToken"
+  "OData-Version" = "4.0"
+}
+
+$AgentIdentity = Invoke-RestMethod `
+  -Method Post `
+  -Uri "https://graph.microsoft.com/v1.0/servicePrincipals/Microsoft.Graph.AgentIdentity" `
+  -Headers $Headers `
+  -ContentType "application/json" `
+  -Body ($AgentIdentityBody | ConvertTo-Json -Depth 5)
+
+$AgentIdentity
 ```
 
 ## Create Agent User for Agent Identity (Optional)
