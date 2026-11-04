@@ -1,0 +1,259 @@
+{
+  "name": "PIM Pre-Approval Evaluation Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "3904e5dd-83fb-4715-b974-a7ef5ca5d3c2",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -176
+      ],
+      "id": "6b4ea4e3-4ddb-414a-899d-39c9bce390ee",
+      "name": "Webhook",
+      "webhookId": "3904e5dd-83fb-4715-b974-a7ef5ca5d3c2"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"evaluationId\": \"{{ $json.output.evaluationId }}\",\n  \"evaluationOutcome\": \"{{ $json.output.evaluationOutcome }}\",\n  \"reason\": [ \"{{ $json.output.reason }}\" ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1168,
+        -176
+      ],
+      "id": "d5d052c9-435d-4b9f-8c26-b5d5739fe745",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {},
+      "type": "@astaykov/n8n-nodes-entraagentid.entraAgentIdAuthManager",
+      "typeVersion": 1,
+      "position": [
+        224,
+        -176
+      ],
+      "id": "73613947-dc9c-439e-b000-850708207daf",
+      "name": "Entra Agent ID Authentication Manager",
+      "credentials": {
+        "entraAgentIDApi": {
+          "id": "rXQnETJX1ws3fsWv",
+          "name": "EntraAgentID - Autonomous"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=User {{ $('Webhook').item.json.body.principal.userPrincipalName }} requested activation of the role {{ $('Webhook').item.json.body.roleDefinition.displayName }} with the justification {{ $('Webhook').item.json.body.justification }} for the duration {{ $('Webhook').item.json.body.scheduleInfo.expiration.duration }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a helpful assistant evaluating Microsoft Entra ID Privileged Identity Management eligible activation requests.\nYou have tools to work with Entra ID. You will check the users activation request, looking at the role requested, the justification and the duration of the activation. You will check the Learn MCP server tool to see if the justification matches the best practices for role selected. You will return output in the format of evaluationId to a guid unique to this memory and request. You will return an evaluationOutcome with either \"Approved\", \"AutoApproved\" or \"Denied\" based on the above checks to Learn MCP. And you will return a reason explaining why."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        640,
+        -176
+      ],
+      "id": "a9d488af-6ac2-402f-a313-7f3e61d074e3",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        464,
+        64
+      ],
+      "id": "fd9c036b-ddeb-45a7-93a5-d11b35455cfb",
+      "name": "Azure OpenAI Chat Model",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "0w9q304WddauweI7",
+          "name": "Azure OpenAI - gpt-4o"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').item.json.body.principalId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        592,
+        64
+      ],
+      "id": "6bdb71c2-0065-4d58-9823-1c2fa1e5056f",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://mcp.svc.cloud.microsoft/enterprise",
+        "authentication": "bearerAuth",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.4,
+      "position": [
+        720,
+        64
+      ],
+      "id": "a7f2e437-8bb6-4103-bfdf-19a1bf032254",
+      "name": "MCP Enterprise",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "jjgfK5jrqEzaGCWg",
+          "name": "Bearer from AuthManager"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://learn.microsoft.com/api/mcp",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.4,
+      "position": [
+        848,
+        64
+      ],
+      "id": "f2dbe34b-db83-45f9-ad0b-7f4483a5a6e4",
+      "name": "Microsoft Learn MCP"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"evaluationId\": \"7bb822c8-550c-42c7-98b3-1a4d095f95ee\",\n  \"evaluationOutcome\": \"Approved\",\n  \"reason\": [\n    \"The request explains the planned change and references a valid incident.\"\n  ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        976,
+        64
+      ],
+      "id": "455168de-3b71-477c-afbc-8c1f90ec51fc",
+      "name": "Structured Output Parser"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Entra Agent ID Authentication Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entra Agent ID Authentication Manager": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Azure OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Enterprise": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Microsoft Learn MCP": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c9d0e56c-832e-421a-b639-64950f1125c5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4b071b3286fdad3577f7486e7b19add05337ee61d086e86ebd1958436d87b340"
+  },
+  "nodeGroups": [],
+  "id": "2HNYlT7ZoPwVVXQB",
+  "tags": []
+}
